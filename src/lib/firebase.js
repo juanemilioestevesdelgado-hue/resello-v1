@@ -13,11 +13,19 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Solo inicializamos si tenemos la API Key (evita errores en el build de Vercel)
+let app;
+if (typeof window !== "undefined" || process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+  try {
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  } catch (error) {
+    console.error("Firebase initialization error", error);
+  }
+}
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const functions = getFunctions(app);
+export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
+export const storage = app ? getStorage(app) : null;
+export const functions = app ? getFunctions(app) : null;
 
 export default app;
