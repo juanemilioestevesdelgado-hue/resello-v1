@@ -25,6 +25,10 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (!auth) {
+      setError('Error del sistema: Faltan las variables de entorno de Firebase en Vercel.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
