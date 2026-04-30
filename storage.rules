@@ -1,0 +1,25 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to verify admin
+    function isAdmin() {
+      // In Firebase Storage rules, checking Firestore custom claims or docs is not directly possible 
+      // without custom claims. If using custom claims: return request.auth.token.admin == true;
+      // Alternatively, assuming we restrict uploads and allow reads based on auth:
+      return request.auth != null; 
+    }
+
+    match /selfies/{imageId} {
+      // Allow read to authenticated users (admins need to see it, firefighters can see their own)
+      allow read: if request.auth != null;
+      
+      // Allow upload only if authenticated, and the file name starts with their user ID
+      // and the file is an image under 5MB.
+      allow write: if request.auth != null 
+                   && imageId.matches(request.auth.uid + '.*')
+                   && request.resource.size < 5 * 1024 * 1024 // 5MB max
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
