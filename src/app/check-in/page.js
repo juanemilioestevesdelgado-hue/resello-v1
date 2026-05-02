@@ -129,12 +129,31 @@ export default function CheckInPage() {
 
       setStatusMsg("2/3: Subiendo selfie de seguridad...");
       // 2. Upload Selfie
+      if (!storage) throw new Error("Firebase Storage no está inicializado. Revisa las variables de entorno.");
+      
       const storageRef = ref(storage, `selfies/${user.uid}_${Date.now()}.jpg`);
-      await uploadString(storageRef, selfie, 'data_url');
+      
+      // Añadimos metadatos explícitos para asegurar que pase las reglas de seguridad
+      const metadata = {
+        contentType: 'image/jpeg',
+        customMetadata: {
+          'userId': user.uid
+        }
+      };
+
+      try {
+        await uploadString(storageRef, selfie, 'data_url', metadata);
+      } catch (uploadError) {
+        console.error("Error detallado de subida:", uploadError);
+        throw new Error(`Error al subir la foto: ${uploadError.code || uploadError.message}`);
+      }
+      
       const selfieUrl = await getDownloadURL(storageRef);
 
       setStatusMsg("3/3: Guardando asistencia...");
       // 3. Save Attendance Record
+      if (!db) throw new Error("Firestore no está inicializado.");
+      
       await addDoc(collection(db, 'attendance'), {
         userId: user.uid,
         email: user.email,
