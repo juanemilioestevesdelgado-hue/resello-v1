@@ -218,7 +218,23 @@ export default function CheckInPage() {
         {step === 2 && (
           <div className="text-center animate-fade-in py-4">
             <div style={{fontSize: '3rem', animation: 'pulse 1.5s infinite'}}>📍</div>
-            <h4 className="mt-4">Verifying Location...</h4>
+            <h4 className="mt-4">Verificando Ubicación...</h4>
+            {statusMsg.includes("Error") && (
+              <div className="mt-4">
+                <p className="text-muted mb-4">Asegúrate de permitir el acceso al GPS en tu navegador.</p>
+                <button onClick={() => {
+                  setStatusMsg("Reintentando GPS...");
+                  navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                      setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+                      setStep(3);
+                    },
+                    (error) => setStatusMsg("Error getting location: " + error.message),
+                    { enableHighAccuracy: true }
+                  );
+                }}>Reintentar</button>
+              </div>
+            )}
           </div>
         )}
 
