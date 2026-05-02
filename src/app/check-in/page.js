@@ -222,17 +222,23 @@ export default function CheckInPage() {
             {statusMsg.includes("Error") && (
               <div className="mt-4">
                 <p className="text-muted mb-4">Asegúrate de permitir el acceso al GPS en tu navegador.</p>
-                <button onClick={() => {
-                  setStatusMsg("Reintentando GPS...");
-                  navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                      setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-                      setStep(3);
-                    },
-                    (error) => setStatusMsg("Error getting location: " + error.message),
-                    { enableHighAccuracy: true }
-                  );
-                }}>Reintentar</button>
+                <div className="flex flex-col gap-2">
+                  <button onClick={() => {
+                    setStatusMsg("Reintentando GPS...");
+                    navigator.geolocation.getCurrentPosition(
+                      (position) => {
+                        setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+                        setStep(3);
+                      },
+                      (error) => setStatusMsg("Error getting location: " + error.message),
+                      { enableHighAccuracy: true }
+                    );
+                  }}>Reintentar</button>
+                  <button onClick={() => {
+                    setLocation({ lat: 0, lng: 0, unverified: true });
+                    setStep(3);
+                  }} className="secondary">Continuar sin GPS (Ubicación no verificada)</button>
+                </div>
               </div>
             )}
           </div>
