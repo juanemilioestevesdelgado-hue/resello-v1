@@ -105,7 +105,7 @@ export default function CheckInPage() {
 
   const submitCheckIn = async () => {
     setIsSubmitting(true);
-    setStatusMsg("Validating presence and submitting...");
+    setStatusMsg("1/3: Verificando token QR...");
     
     try {
       // 1. Verify Token with API
@@ -115,14 +115,25 @@ export default function CheckInPage() {
         body: JSON.stringify({ token: scannedToken, userId: user.uid, location })
       });
       
-      const tokenData = await tokenRes.json();
-      if (!tokenRes.ok) throw new Error(tokenData.error || "Token verification failed");
+      if (!tokenRes.ok) {
+        const text = await tokenRes.text();
+        let errorMsg = "Error en el servidor";
+        try {
+          const tokenData = JSON.parse(text);
+          errorMsg = tokenData.error || errorMsg;
+        } catch(e) {
+          errorMsg = `Error HTTP ${tokenRes.status}`;
+        }
+        throw new Error(errorMsg);
+      }
 
+      setStatusMsg("2/3: Subiendo selfie de seguridad...");
       // 2. Upload Selfie
       const storageRef = ref(storage, `selfies/${user.uid}_${Date.now()}.jpg`);
       await uploadString(storageRef, selfie, 'data_url');
       const selfieUrl = await getDownloadURL(storageRef);
 
+      setStatusMsg("3/3: Guardando asistencia...");
       // 3. Save Attendance Record
       await addDoc(collection(db, 'attendance'), {
         userId: user.uid,
@@ -135,9 +146,11 @@ export default function CheckInPage() {
         status: 'verified'
       });
 
+      setStatusMsg("¡Completado!");
       setStep(4);
     } catch (error) {
-      setStatusMsg("Check-in failed: " + error.message);
+      console.error("Check-in error:", error);
+      setStatusMsg("Error: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
