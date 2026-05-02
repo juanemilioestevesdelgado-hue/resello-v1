@@ -127,28 +127,32 @@ export default function CheckInPage() {
         throw new Error(errorMsg);
       }
 
-      setStatusMsg("2/3: Subiendo selfie de seguridad...");
-      // 2. Upload Selfie
-      if (!storage) throw new Error("Firebase Storage no está inicializado. Revisa las variables de entorno.");
+      setStatusMsg("2/3: Subiendo selfie a ImgBB...");
       
-      const storageRef = ref(storage, `selfies/${user.uid}_${Date.now()}.jpg`);
-      
-      // Añadimos metadatos explícitos para asegurar que pase las reglas de seguridad
-      const metadata = {
-        contentType: 'image/jpeg',
-        customMetadata: {
-          'userId': user.uid
-        }
-      };
-
+      let selfieUrl = "";
       try {
-        await uploadString(storageRef, selfie, 'data_url', metadata);
+        // Extraemos la base64 del dataUrl
+        const base64Image = selfie.split(',')[1];
+        
+        const formData = new FormData();
+        formData.append('image', base64Image);
+        
+        const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=e0cdc2716abb1e39cd20af6dc89a866b`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        const imgbbData = await imgbbRes.json();
+        
+        if (imgbbData.success) {
+          selfieUrl = imgbbData.data.url;
+        } else {
+          throw new Error(imgbbData.error?.message || "Fallo en la subida a ImgBB");
+        }
       } catch (uploadError) {
-        console.error("Error detallado de subida:", uploadError);
-        throw new Error(`Error al subir la foto: ${uploadError.code || uploadError.message}`);
+        console.error("Error detallado de subida a ImgBB:", uploadError);
+        throw new Error(`Error al subir la foto a ImgBB: ${uploadError.message}`);
       }
-      
-      const selfieUrl = await getDownloadURL(storageRef);
 
       setStatusMsg("3/3: Guardando asistencia...");
       // 3. Save Attendance Record
